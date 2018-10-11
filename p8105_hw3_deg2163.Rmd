@@ -35,11 +35,42 @@ data("brfss_smart2010")
 brfss_smart2010_clean = 
    brfss_smart2010 %>% 
    janitor::clean_names() %>% 
-   filter(topic == "Overall Health" & (response == "Excellent" | 
-                                       response == "Very good" |
+   rename(state = locationabbr, county = locationdesc) %>% 
+   filter(topic == "Overall Health" & (response == "Excellent" | response == "Very good" |
                                        response == "Good" | response == "Fair" | 
                                        response == "Poor")) %>% 
-   arrange(response) 
+   mutate(response = ordered(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+```
+
+For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
+
+```{r}
+## In 2002, which states were observed at 7 locations? CT, FL, and NC
+brfss_smart2010_clean %>% 
+  filter(year == 2002) %>% 
+  group_by(state) %>% 
+  distinct(county) %>% 
+  count() %>% 
+  filter(n == 7) 
+
+## Make a “spaghetti plot” that shows the number of locations in each state from 2002 to 2010.
+brfss_smart2010_clean %>% 
+  group_by(state, year) %>% 
+  distinct(county) %>%
+  summarize(count_county = n()) %>% 
+  ggplot(aes(x = year, y = count_county, color = state)) + 
+  geom_line() + 
+  labs(
+    title = "Number of locations in each state from 2002 to 2010",
+    x = "Year",
+    y = "Number of locations in each state",
+    caption = "Data from the brfss_smart2010 package"
+  ) + 
+  viridis::scale_color_viridis(
+    name = "States", 
+    discrete = TRUE) + 
+  theme_bw() 
+
 ```
 
 
