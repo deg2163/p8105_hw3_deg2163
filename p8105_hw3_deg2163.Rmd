@@ -5,12 +5,12 @@ date: "10/11/2018"
 output: github_document
 ---
 
-```{r setup, include=FALSE}
+```{r setup}
 knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
-library(rvest)
-library(httr)
+library(ggridges)
+library(dplyr)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -21,22 +21,25 @@ knitr::opts_chunk$set(
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 ```
 
-## R Markdown
+# ***Problem 1*** 
+```{r setup_problem_1}
+# install.packages("devtools")
+devtools::install_github("p8105/p8105.datasets")
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+## loading the library and obtaining data
+library(p8105.datasets)
+data("brfss_smart2010")
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+## creating the brfss_smart2010_df
+## as.factor(response) doesn't work 
+brfss_smart2010_clean = 
+   brfss_smart2010 %>% 
+   janitor::clean_names() %>% 
+   filter(topic == "Overall Health" & (response == "Excellent" | 
+                                       response == "Very good" |
+                                       response == "Good" | response == "Fair" | 
+                                       response == "Poor")) %>% 
+   arrange(response) 
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
