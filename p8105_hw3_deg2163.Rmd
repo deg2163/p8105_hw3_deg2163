@@ -25,8 +25,13 @@ theme_set(theme_bw() + theme(legend.position = "bottom"))
 # install.packages("devtools")
 devtools::install_github("p8105/p8105.datasets")
 
-## loading the library and obtaining data
+## loading the library
 library(p8105.datasets)
+```
+
+
+```{r load_brfss_smart2010}
+## Load the data for brfss_smart2010
 data("brfss_smart2010")
 ```
 
@@ -105,4 +110,16 @@ brfss_smart2010_clean %>%
     discrete = TRUE
   )
 ```
+
+### ***Problem 2***
+
+```{r load_instacart_data}
+## Load the data for instacart
+data("instacart")
+instacart = instacart 
+```
+
+Description of the dataset: 
+There are 15 variables in the dataset that include information including when the items were ordered, days since the customer's last order, product name, aisle the item was located at, product id, order id, whether the item was reorder, user's id. There are some variables that are not clearly defined including eval_set,order_dow. I am assuming that order_dow is referring to the day of the week the order was placed from 0-6 with 0 being Saturday according to some online research since those are the days with the most instacart orders. The dataset is structured so that each row is a different item from an order that was placed (i.e., 1,384,617 items were ordered via instacart). 
+
 
