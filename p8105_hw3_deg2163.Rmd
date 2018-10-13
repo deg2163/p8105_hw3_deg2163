@@ -10,7 +10,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(tidyverse)
 library(ggridges)
-library(dplyr)
 
 knitr::opts_chunk$set(
   fig.width = 6,
@@ -29,9 +28,10 @@ devtools::install_github("p8105/p8105.datasets")
 ## loading the library and obtaining data
 library(p8105.datasets)
 data("brfss_smart2010")
+```
 
-## creating the brfss_smart2010_df
-## as.factor(response) doesn't work 
+```{r brfss_smart_2010_df}
+## cleaning the dataset 
 brfss_smart2010_clean = 
    brfss_smart2010 %>% 
    janitor::clean_names() %>% 
@@ -42,17 +42,17 @@ brfss_smart2010_clean =
    mutate(response = ordered(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
 ```
 
-For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
-
-```{r}
-## In 2002, which states were observed at 7 locations? CT, FL, and NC
+```{r problem_1_questions}
+## In 2002, which states were observed at 7 locations? Answer: CT, FL, and NC
 brfss_smart2010_clean %>% 
   filter(year == 2002) %>% 
   group_by(state) %>% 
   distinct(county) %>% 
   count() %>% 
   filter(n == 7) 
+```
 
+```{r spaghett_plot}
 ## Make a “spaghetti plot” that shows the number of locations in each state from 2002 to 2010.
 brfss_smart2010_clean %>% 
   group_by(state, year) %>% 
@@ -70,7 +70,24 @@ brfss_smart2010_clean %>%
     name = "States", 
     discrete = TRUE) + 
   theme_bw() 
-
 ```
 
+```{r table_mean_sd}
+## ## Make a table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State. 
+## SD I keep getting NA 
+brfss_smart2010_clean %>% 
+  filter((year == 2002 | year == 2006 | year == 2010) & (state == "NY") 
+         & response == "Excellent") %>% 
+  group_by(year, state, county) %>%
+  spread(key = response, value = data_value) %>% 
+  janitor::clean_names() %>% 
+  summarize(mean_excellent = mean(excellent),
+            sd_excellent = sd(excellent)) %>% 
+  knitr::kable()
+```
+
+```{r}
+## For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
+
+```
 
