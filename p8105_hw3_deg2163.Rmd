@@ -57,7 +57,7 @@ brfss_smart2010_clean %>%
   filter(n == 7) 
 ```
 
-```{r spaghett_plot}
+```{r spaghetti_plot}
 ## Make a “spaghetti plot” that shows the number of locations in each state from 2002 to 2010.
 brfss_smart2010_clean %>% 
   group_by(state, year) %>% 
@@ -81,14 +81,15 @@ brfss_smart2010_clean %>%
 ## ## Make a table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State. 
 ## SD I keep getting NA, need to convert from percentage to prop
 brfss_smart2010_clean %>% 
-  filter((year == 2002 | year == 2006 | year == 2010) & (state == "NY") 
+  filter((year == 2002 | year == 2006 | year == 2010) & state == "NY" 
          & response == "Excellent") %>% 
   group_by(year, state, county) %>% 
-  spread(key = response, value = data_value) %>%
+  spread(key = response, value = data_value) %>% 
   janitor::clean_names() %>% 
   summarize(mean_excellent = mean(excellent),
-            sd_excellent = sd(excellent)) %>% 
-  knitr::kable()
+            sd_excellent = sd(excellent, na.rm = TRUE)) %>% 
+  mutate(mean_excellent = mean_excellent / 100) %>% 
+  knitr::kable(digits = 2)
 ```
 
 ```{r}
@@ -116,10 +117,108 @@ brfss_smart2010_clean %>%
 ```{r load_instacart_data}
 ## Load the data for instacart
 data("instacart")
-instacart = instacart 
+instacart = 
+  instacart %>% 
+  janitor::clean_names()
 ```
 
 Description of the dataset: 
 There are 15 variables in the dataset that include information including when the items were ordered, days since the customer's last order, product name, aisle the item was located at, product id, order id, whether the item was reorder, user's id. There are some variables that are not clearly defined including eval_set,order_dow. I am assuming that order_dow is referring to the day of the week the order was placed from 0-6 with 0 being Saturday according to some online research since those are the days with the most instacart orders. The dataset is structured so that each row is a different item from an order that was placed (i.e., 1,384,617 items were ordered via instacart). 
 
+
+```{r aisle_calculation}
+## How many aisles are there?
+instacart %>% 
+ distinct(aisle_id) %>%
+ count()
+```
+
+There are `r instacart %>% distinct(aisle_id) %>% count()` aisles. 
+
+```{r aisle_most_items}
+## Which aisles are the most items ordered from?
+instacart %>% 
+  group_by(aisle) %>% 
+  count(aisle) %>% 
+  arrange(desc(n)) %>% 
+  head() %>% 
+  knitr::kable()
+```
+
+```{r plot_aisles_most_items}
+instacart %>% 
+  group_by(aisle) %>% 
+  count(aisle) %>%
+  ggplot(aes(x = aisle, y = n)) + 
+  geom_point() + 
+  labs(
+    title = "Number of items ordered in each aisle",
+    x = "Aisle",
+    y = "Number of items ordered per aisle",
+    caption = "Data from the instacart dataset"
+  ) + 
+ theme(axis.text.x = element_text(angle = 60, hjust = 1))
+```
+
+```{r most_pop_item}
+## Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+instacart %>% 
+  filter(aisle == "baking ingredients" | 
+         aisle == "dog food care" | 
+         aisle == "packaged vegetables fruits") %>% 
+  group_by(aisle) %>% 
+  summarize(most_popular_item = max(product_name)) %>%
+  knitr::kable()
+```
+
+```{r}
+## Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+instacart %>% 
+  filter(product_name == "Pink Lady Apples" | 
+         product_name == "Coffee Ice Cream") %>% 
+  group_by(product_name, order_dow) %>% 
+  summarize(mean_order_hour_of_day = mean(order_hour_of_day)) %>%
+  spread(key = order_dow, value = mean_order_hour_of_day) %>% 
+  rename("Product Name" = "product_name", "Saturday" = "0", 
+         "Sunday" = "1", "Monday" = "2", "Tuesday" = "3", 
+         "Wednesday" = "4", "Thursday" = "5", "Friday" = "6") %>% 
+  knitr::kable(digits = 2)
+```
+
+### **Problem 3** 
+```{r load_nyoaa}
+## Load the data for instacart
+data("ny_noaa")
+ny_noaa = ny_noaa 
+```
+
+Description of the dataset: 
+There are 7 vairables in this dataset with 2,595,176 observations (i.e., number of row). Each row provides information on the precipitation, max and minimum temperature on any given day. After some googling, I found some definitions for the variables, however it is possible this dataset does not follow these: 
+id = station identification code
+prcp = Precipitation (tenths of mm)
+snow = Snowfall (mm)
+snwd = Snow depth (mm)
+tmax = Maximum temperature (tenths of degrees C)
+tmin = Minimum temperature (tenths of degrees C)
+  
+```{r}
+## Do some data cleaning. Create separate variables for year, month, and day. Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. 
+
+## Separated date into year, month, and day; converted month to list the, converted the units for prcp to inches, tmin/tmax from tenths of degrees C to degrees in fahrenheit 
+ny_noaa_clean = 
+  ny_noaa %>% 
+  janitor::clean_names() %>% 
+  separate(date, into = c("year","month","day"), sep = "-") %>% 
+  mutate(month = month.name[as.numeric(month)], 
+         prcp = prcp * 10 / 25.4, 
+         tmin = tmin * 10 * (9/5) + 32,  
+         tmax = tmax * 10 * (9/5) + 32
+         ) 
+```
+
+```{r}
+## For snowfall, what are the most commonly observed values? Why?
+ny_noaa_clean %>% 
+  summarize(mode_snowfall = mode("snow"), na.rm = TRUE)
+```
 
