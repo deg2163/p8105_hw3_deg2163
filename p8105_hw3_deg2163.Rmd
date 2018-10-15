@@ -141,7 +141,7 @@ instacart %>%
   group_by(aisle) %>% 
   count(aisle) %>% 
   arrange(desc(n)) %>% 
-  head() %>% 
+  head() %>% View()
   knitr::kable()
 ```
 
@@ -193,7 +193,7 @@ ny_noaa = ny_noaa
 ```
 
 Description of the dataset: 
-There are 7 vairables in this dataset with 2,595,176 observations (i.e., number of row). Each row provides information on the precipitation, max and minimum temperature on any given day. After some googling, I found some definitions for the variables, however it is possible this dataset does not follow these: 
+There are 7 vairables in this dataset with 2,595,176 observations (i.e., number of row). Each row provides information on the precipitation, max and minimum temperature on any given day. Each dataset is : 
 id = station identification code
 prcp = Precipitation (tenths of mm)
 snow = Snowfall (mm)
@@ -209,16 +209,59 @@ ny_noaa_clean =
   ny_noaa %>% 
   janitor::clean_names() %>% 
   separate(date, into = c("year","month","day"), sep = "-") %>% 
-  mutate(month = month.name[as.numeric(month)], 
-         prcp = prcp * 10 / 25.4, 
-         tmin = tmin * 10 * (9/5) + 32,  
-         tmax = tmax * 10 * (9/5) + 32
+  mutate(month = month.name[as.numeric(month)],
+         tmin = as.numeric(tmin, na.rm = TRUE),
+         tmax = as.numeric(tmax, na.rm = TRUE), 
+         prcp = prcp * 10 / 25.4,
+         tmin = tmin / 10,  
+         tmax = tmax / 10
          ) 
 ```
 
 ```{r}
 ## For snowfall, what are the most commonly observed values? Why?
 ny_noaa_clean %>% 
-  summarize(mode_snowfall = mode("snow"), na.rm = TRUE)
+  sort(table(snow), na.rm = TRUE)
+```
+
+```{r}
+## Make a two-panel plot showing the average max temperature in January and in July in each station across years. Is there any observable / interpretable structure? Any outliers?
+
+ny_noaa_clean %>% 
+  filter(month == "January" | month == "July") %>% 
+  group_by(id, year, month) %>% 
+  mutate(average_temp_per_month = mean(tmax)) %>% 
+  ggplot(aes(x = year, y = average_temp_per_month), alpha - 0.5) + 
+  geom_point() + 
+  facet_grid(~month) + 
+  labs(
+    title = "Average Max Temperature in January and July in Each Station Across Years",
+    x = "Year",
+    y = "Average Max Temperature",
+    caption = "Data from the nyoaa dataset"
+  ) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+```
+
+```{r}
+## Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+
+library(patchwork)
+
+ny_noaa_tmax = 
+  ny_noaa_clean %>% 
+  ggplot(aes(x = year, y = average_temp_per_month), alpha - 0.5) + 
+  geom_hexbin() + 
+  labs(
+    title = "Average Max Temperature in January and July in Each Station Across Years",
+    x = "Year",
+    y = "Average Max Temperature",
+    caption = "Data from the nyoaa dataset"
+  ) + 
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+
+
+ny_noaa_tmin = 
+  ny_noaa_clean %>% 
 ```
 
