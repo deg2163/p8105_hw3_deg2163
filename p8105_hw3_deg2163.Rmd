@@ -1,6 +1,6 @@
 ---
-title: "Homework 3 - deg2163"
-author: "Diana Ballesteros Gonzalez"
+title: "Homework 3"
+author: "Diana Ballesteros Gonzalez (deg2163)"
 date: "10/11/2018"
 output: github_document
 ---
@@ -20,7 +20,7 @@ knitr::opts_chunk$set(
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 ```
 
-# ***Problem 1*** 
+### **Problem 1** 
 ```{r setup_problem_1}
 # install.packages("devtools")
 devtools::install_github("p8105/p8105.datasets")
@@ -41,10 +41,12 @@ brfss_smart2010_clean =
    brfss_smart2010 %>% 
    janitor::clean_names() %>% 
    rename(state = locationabbr, county = locationdesc) %>% 
-   filter(topic == "Overall Health" & (response == "Excellent" | response == "Very good" |
+   filter(topic == "Overall Health" & (response == "Excellent" | 
+                                       response == "Very good" |
                                        response == "Good" | response == "Fair" | 
                                        response == "Poor")) %>% 
-   mutate(response = ordered(response, levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
+   mutate(response = ordered(response, 
+                             levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
 ```
 
 ```{r problem_1_questions}
@@ -83,12 +85,13 @@ brfss_smart2010_clean %>%
 brfss_smart2010_clean %>% 
   filter((year == 2002 | year == 2006 | year == 2010) & state == "NY" 
          & response == "Excellent") %>% 
-  group_by(year, state, county) %>% 
+  group_by(year) %>% 
   spread(key = response, value = data_value) %>% 
   janitor::clean_names() %>% 
   summarize(mean_excellent = mean(excellent),
             sd_excellent = sd(excellent, na.rm = TRUE)) %>% 
-  mutate(mean_excellent = mean_excellent / 100) %>% 
+  mutate(mean_excellent = mean_excellent / 100, 
+        sd_excellent = sd_excellent / 100)  %>% 
   knitr::kable(digits = 2)
 ```
 
@@ -112,7 +115,7 @@ brfss_smart2010_clean %>%
   )
 ```
 
-### ***Problem 2***
+### **Problem 2**
 
 ```{r load_instacart_data}
 ## Load the data for instacart
@@ -141,7 +144,7 @@ instacart %>%
   group_by(aisle) %>% 
   count(aisle) %>% 
   arrange(desc(n)) %>% 
-  head() %>% View()
+  head() %>% 
   knitr::kable()
 ```
 
@@ -204,7 +207,7 @@ tmin = Minimum temperature (tenths of degrees C)
 ```{r}
 ## Do some data cleaning. Create separate variables for year, month, and day. Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. 
 
-## Separated date into year, month, and day; converted month to list the, converted the units for prcp to inches, tmin/tmax from tenths of degrees C to degrees in fahrenheit 
+## Separated date into year, month, and day; converted month to list the, converted the units for prcp to inches, tmin/tmax from tenths of degrees C to degrees C
 ny_noaa_clean = 
   ny_noaa %>% 
   janitor::clean_names() %>% 
@@ -220,8 +223,12 @@ ny_noaa_clean =
 
 ```{r}
 ## For snowfall, what are the most commonly observed values? Why?
-ny_noaa_clean %>% 
-  sort(table(snow), na.rm = TRUE)
+ny_noaa_clean %>%
+  group_by(snow) %>% 
+  count(snow) %>% 
+  summarize(most_common_observed = max(n, na.rm = TRUE)) %>% 
+  arrange(desc(most_common_observed)) %>% 
+  top_n(1)
 ```
 
 ```{r}
@@ -229,9 +236,9 @@ ny_noaa_clean %>%
 
 ny_noaa_clean %>% 
   filter(month == "January" | month == "July") %>% 
-  group_by(id, year, month) %>% 
-  mutate(average_temp_per_month = mean(tmax)) %>% 
-  ggplot(aes(x = year, y = average_temp_per_month), alpha - 0.5) + 
+  group_by(year, month) %>% 
+  mutate(average_temp_per_month = mean(tmax, na.rm = TRUE)) %>% 
+  ggplot(aes(x = year, y = average_temp_per_month)) + 
   geom_point() + 
   facet_grid(~month) + 
   labs(
@@ -246,22 +253,38 @@ ny_noaa_clean %>%
 ```{r}
 ## Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
 
+## Load the patchwork library
 library(patchwork)
 
-ny_noaa_tmax = 
-  ny_noaa_clean %>% 
-  ggplot(aes(x = year, y = average_temp_per_month), alpha - 0.5) + 
-  geom_hexbin() + 
+## Install the hexbin package and load it 
+library(hexbin)
+
+## Create tmax vs tmin plot 
+ny_noaa_tmin_tmax = 
+  ny_noaa_clean %>%
+  ggplot(aes(x = tmax, y = tmin)) + 
+  geom_hex() + 
   labs(
-    title = "Average Max Temperature in January and July in Each Station Across Years",
+    title = "Minimum vs Maximum Temperature",
+    x = "Minimum Temperature",
+    y = "Max Temperature") + 
+  theme(legend.position = "none")
+
+## Create plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+ny_noaa_snow = 
+  ny_noaa_clean %>%
+  group_by(year) %>% 
+  filter(snow > 0 & snow < 100) %>% 
+  ggplot(aes(x = year, y = snow)) + 
+  geom_boxplot() + 
+   labs(
+    title = "Distribution of snowfall values greater than 0 and less than 100 by year",
     x = "Year",
-    y = "Average Max Temperature",
-    caption = "Data from the nyoaa dataset"
-  ) + 
+    y = "Amount of Snowfall in mm") + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
+  
+## Using patchwork, I combined both plots 
+ny_noaa_tmin_tmax + ny_noaa_snow
 
-
-ny_noaa_tmin = 
-  ny_noaa_clean %>% 
 ```
 
