@@ -12,8 +12,8 @@ library(tidyverse)
 library(ggridges)
 
 knitr::opts_chunk$set(
-  fig.width = 6,
-  fig.asp = .6,
+  fig.width = 10,
+  fig.asp = 1.0,
   out.width = "90%"
 )
 
@@ -49,18 +49,21 @@ brfss_smart2010_clean =
                              levels = c("Poor", "Fair", "Good", "Very good", "Excellent")))
 ```
 
-```{r problem_1_questions}
-## In 2002, which states were observed at 7 locations? Answer: CT, FL, and NC
-brfss_smart2010_clean %>% 
+The states that were observed at 7 locations in 2002 were: 
+```{r states_observed_7}
+brfss_smart2010_clean %>%
   filter(year == 2002) %>% 
   group_by(state) %>% 
-  distinct(county) %>% 
-  count() %>% 
-  filter(n == 7) 
+  distinct(county) %>% count() %>% 
+  filter(n == 7) %>% 
+  select(-n) %>% 
+  knitr::kable()
 ```
 
+
+“Spaghetti plot” that shows the number of locations in each state from 2002 to 2010.
 ```{r spaghetti_plot}
-## Make a “spaghetti plot” that shows the number of locations in each state from 2002 to 2010.
+## Creating a spaghetti plot 
 brfss_smart2010_clean %>% 
   group_by(state, year) %>% 
   distinct(county) %>%
@@ -79,9 +82,9 @@ brfss_smart2010_clean %>%
   theme_bw() 
 ```
 
+Table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State.
 ```{r table_mean_sd}
-## ## Make a table showing, for the years 2002, 2006, and 2010, the mean and standard deviation of the proportion of “Excellent” responses across locations in NY State. 
-## SD I keep getting NA, need to convert from percentage to prop
+## Creating a table with mean and sd for the prop of excellent responses   
 brfss_smart2010_clean %>% 
   filter((year == 2002 | year == 2006 | year == 2010) & state == "NY" 
          & response == "Excellent") %>% 
@@ -95,13 +98,15 @@ brfss_smart2010_clean %>%
   knitr::kable(digits = 2)
 ```
 
-```{r}
-## For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
+For each year and state, compute the average proportion in each response category (taking the average across locations in a state). Make a five-panel plot that shows, for each response category separately, the distribution of these state-level averages over time.
+```{r average_prop_response_plot}
+
+## Creating a plot for each response category and average prop 
 brfss_smart2010_clean %>% 
   group_by(year, state, response) %>% 
   summarize(mean_response_category = mean(data_value/100)) %>% 
   ggplot(aes(x = year, y = mean_response_category, color = state)) + 
-  geom_line() + 
+  geom_line(aes(alpha = 0.5)) + 
   facet_grid(~response) + 
   labs(
     title = "Distribution of state-level averages over time",
@@ -116,7 +121,6 @@ brfss_smart2010_clean %>%
 ```
 
 ### **Problem 2**
-
 ```{r load_instacart_data}
 ## Load the data for instacart
 data("instacart")
@@ -128,7 +132,6 @@ instacart =
 Description of the dataset: 
 There are 15 variables in the dataset that include information including when the items were ordered, days since the customer's last order, product name, aisle the item was located at, product id, order id, whether the item was reorder, user's id. There are some variables that are not clearly defined including eval_set,order_dow. I am assuming that order_dow is referring to the day of the week the order was placed from 0-6 with 0 being Saturday according to some online research since those are the days with the most instacart orders. The dataset is structured so that each row is a different item from an order that was placed (i.e., 1,384,617 items were ordered via instacart). 
 
-
 ```{r aisle_calculation}
 ## How many aisles are there?
 instacart %>% 
@@ -138,8 +141,9 @@ instacart %>%
 
 There are `r instacart %>% distinct(aisle_id) %>% count()` aisles. 
 
-```{r aisle_most_items}
-## Which aisles are the most items ordered from?
+The item where the most items are ordered from: 
+```{r aisle_most_items_table}
+## Creting a table for the most items 
 instacart %>% 
   group_by(aisle) %>% 
   count(aisle) %>% 
@@ -148,7 +152,8 @@ instacart %>%
   knitr::kable()
 ```
 
-```{r plot_aisles_most_items}
+```{r aisles_most_items_plot}
+## Creating a plot with the aisles with the most items ordered from 
 instacart %>% 
   group_by(aisle) %>% 
   count(aisle) %>%
@@ -159,12 +164,13 @@ instacart %>%
     x = "Aisle",
     y = "Number of items ordered per aisle",
     caption = "Data from the instacart dataset"
-  ) + 
- theme(axis.text.x = element_text(angle = 60, hjust = 1))
+  ) +  
+  theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
 ```
 
-```{r most_pop_item}
-## Make a table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+Table showing the most popular item in each of the aisles “baking ingredients”, “dog food care”, and “packaged vegetables fruits”.
+```{r most_pop_item_table}
+## Creating a table with the most pop items in three aisles 
 instacart %>% 
   filter(aisle == "baking ingredients" | 
          aisle == "dog food care" | 
@@ -174,8 +180,9 @@ instacart %>%
   knitr::kable()
 ```
 
-```{r}
-## Make a table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week; format this table for human readers (i.e. produce a 2 x 7 table).
+Table showing the mean hour of the day at which Pink Lady Apples and Coffee Ice Cream are ordered on each day of the week
+```{r mean_hour_day_table}
+## Creating a table with mean hour of the day 
 instacart %>% 
   filter(product_name == "Pink Lady Apples" | 
          product_name == "Coffee Ice Cream") %>% 
@@ -204,10 +211,8 @@ snwd = Snow depth (mm)
 tmax = Maximum temperature (tenths of degrees C)
 tmin = Minimum temperature (tenths of degrees C)
   
-```{r}
-## Do some data cleaning. Create separate variables for year, month, and day. Ensure observations for temperature, precipitation, and snowfall are given in reasonable units. 
-
-## Separated date into year, month, and day; converted month to list the, converted the units for prcp to inches, tmin/tmax from tenths of degrees C to degrees C
+```{r ny_noaa_data_cleaning}
+## Data cleaning: Separated date into year, month, and day; converted month to list the, converted the units for prcp to inches, tmin/tmax from tenths of degrees C to degrees
 ny_noaa_clean = 
   ny_noaa %>% 
   janitor::clean_names() %>% 
@@ -221,22 +226,14 @@ ny_noaa_clean =
          ) 
 ```
 
-```{r}
-## For snowfall, what are the most commonly observed values? Why?
-ny_noaa_clean %>%
-  group_by(snow) %>% 
-  count(snow) %>% 
-  summarize(most_common_observed = max(n, na.rm = TRUE)) %>% 
-  arrange(desc(most_common_observed)) %>% 
-  top_n(1)
-```
+* The most commonly observed snowfall value is `r ny_noaa_clean %>% group_by(snow) %>% count(snow) %>% summarize(most_common_observed = max(n, na.rm = TRUE)) %>% arrange(desc(most_common_observed)) %>% top_n(1) %>% select(-most_common_observed)`, which makes sense because there is no snow most of the year.
 
-```{r}
-## Make a two-panel plot showing the average max temperature in January and in July in each station across years. Is there any observable / interpretable structure? Any outliers?
-
+Two-panel plot showing the average max temperature in January and in July in each station across years. There are a few outliers for in both months over the years. One that is clearly seen is in January 2005. The plot also shows a lower distribution of temperatures in January in comparison to July, which makes sense because July is typically warmer than in January.  
+```{r tmax_temp_plot}
+## Two panel plot for avg max temp in Jan & July 
 ny_noaa_clean %>% 
   filter(month == "January" | month == "July") %>% 
-  group_by(year, month) %>% 
+  group_by(year, month, tmax) %>% 
   mutate(average_temp_per_month = mean(tmax, na.rm = TRUE)) %>% 
   ggplot(aes(x = year, y = average_temp_per_month)) + 
   geom_point() + 
@@ -250,9 +247,8 @@ ny_noaa_clean %>%
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
 ```
 
-```{r}
-## Make a two-panel plot showing (i) tmax vs tmin for the full dataset (note that a scatterplot may not be the best option); and (ii) make a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
-
+Two-panel plot showing (i) tmax vs tmin for the full dataset and (ii) a plot showing the distribution of snowfall values greater than 0 and less than 100 separately by year.
+```{r two_panel_tmin_tmax_patchwork}
 ## Load the patchwork library
 library(patchwork)
 
@@ -283,8 +279,7 @@ ny_noaa_snow =
     y = "Amount of Snowfall in mm") + 
   theme(axis.text.x = element_text(angle = 60, hjust = 1)) 
   
-## Using patchwork, I combined both plots 
+## Using patchwork, combined both plots 
 ny_noaa_tmin_tmax + ny_noaa_snow
-
 ```
 
